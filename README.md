@@ -96,9 +96,26 @@ final class JSONElementTests: XCTestCase {
     }
 
     static var allTests = [
-        ("testJSONElement", testJSONElement)
+        ("testJSONElement", testJSONElement),
         ("testJSONMapper", testJSONMapper),
     ]
 }
 
 ```
+
+## Notes and limitations
+
+- **Index access is bounds-safe.** Out-of-range and negative indices (through `[Int]`, `["-1"]`,
+  `keyPath:` or `dynamicMemberLookup`) return `JSONElement.null` / an empty `JSONMapper` rather than
+  trapping.
+- **Booleans stay booleans.** Values produced by `JSONSerialization` (where a boolean is an
+  `NSNumber`) are recognised before the integer casts, so a JSON `true` is a `JSONElement.bool`, not
+  `.int(1)`. Prefer `boolValue` over `intValue` for boolean fields.
+- **Numbers carry their shortest description.** Floating-point values are stored as `Decimal` parsed
+  from the value's shortest round-tripping description, so `0.1` is stored as `0.1` rather than the
+  full binary expansion.
+- **`int` and `decimal` compare numerically.** `JSONElement.int(1) == JSONElement.decimal(1)` and
+  they hash equally, even though the enum keeps them as separate cases. Whole-valued numbers decode
+  as `.int`, so a `.decimal` whole number round-trips to an equal `.int` value.
+- **Key paths collapse nulls.** A key path returns `.null` for a missing key, a type mismatch, and an
+  explicitly `null` intermediate alike; callers cannot distinguish "present but null" from "absent".
